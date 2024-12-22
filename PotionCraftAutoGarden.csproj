@@ -40,6 +40,10 @@
       <HintPath>F:\SteamLibrary\steamapps\common\Potion Craft\BepInEx\core\BepInEx.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="PotionCraft.Core">
+      <HintPath>F:\SteamLibrary\steamapps\common\Potion Craft\Potion Craft_Data\Managed\PotionCraft.Core.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="PotionCraft.ManagerSystem-nstrip">
       <HintPath>F:\SteamLibrary\steamapps\common\Potion Craft\MYdll\PotionCraft.ManagerSystem-nstrip.dll</HintPath>
       <Private>False</Private>

@@ -11,6 +11,18 @@ using System.Reflection;
 using BepInEx.Configuration;
 using HarmonyLib;
 using PotionCraft.ManagersSystem.Day;
+using PotionCraft.EnvironmentSystem;
+using PotionCraft.ObjectBased.Potion;
+using PotionCraft.ScriptableObjects.BuildableInventoryItem;
+using PotionCraft.SoundSystem.SoundPresets;
+using PotionCraft.ObjectBased.ScalesSystem;
+using PotionCraft.ObjectBased.InteractiveItem.InventoryObject;
+using PotionCraft.InventorySystem;
+using PotionCraft.ScriptableObjects;
+using PotionCraft.ObjectBased;
+using UnityEngine.InputSystem.HID;
+using PotionCraft.ScriptableObjects.Potion;
+using PotionCraft.ObjectBased.RecipeMap.ChunkSystem;
 
 namespace PotionCraftAutoGarden
 {
@@ -33,7 +45,7 @@ namespace PotionCraftAutoGarden
                                                  "EnableQuickHarvestWater",  // 配置键
                                                  false,           // 默认值改为 false
                                                  "Enable quick automatic harvesting and watering\n(This may cause lag when used, but all harvesting and watering will be completed instantly)\n" +
-                                                 "是否启用快速自动收割浇水\n(这样做可能使得在使用该功能的时候造成卡顿，但所有的收割和浇水都在一瞬间完成)"); 
+                                                 "是否启用快速自动收割浇水\n(这样做可能使得在使用该功能的时候造成卡顿，但所有的收割和浇水都在一瞬间完成)");
 
             // 创建快捷键配置项，默认为 F1
             quickHarvestWaterHotkey = config.Bind("Hotkeys",
@@ -62,6 +74,9 @@ namespace PotionCraftAutoGarden
             {
                 AutoWateringAndGether();
             }
+            if (Keyboard.current.f2Key.wasPressedThisFrame) {
+                AutoTryFertilize();
+            }
 
             //if (Keyboard.current.f2Key.wasPressedThisFrame)
             //{
@@ -86,6 +101,206 @@ namespace PotionCraftAutoGarden
             //}
         }
 
+        
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(InventoryObject), "TakeFromInventory")]
+        static void AfterTakeFromInventory(InventoryObject __instance, int count, bool grab) {
+            InventoryItem inventoryItem= GetPropertyValueS<InventoryItem>(__instance, "InventoryItem");
+            ItemsPanel itemsPanel = GetPropertyValueS<ItemsPanel>(__instance, "ItemsPanel");
+            Debug.Log(string.Format("拿起出物品 {0}，目前数量：{1}", count, itemsPanel.Inventory.GetItemCount(inventoryItem)));
+        }
+
+
+
+        #region 自动施肥
+        void AutoTryFertilize()
+        {
+
+            if (enableQuickHarvestWater.Value)
+            {
+                GameObject[] visibleSeeds = GetVisibleSeeds();
+                foreach (GameObject seed in visibleSeeds)
+                {
+                    if (!TryFertilize(seed))break;
+                }
+            }
+            else
+            {
+                StartCoroutine(ProcessTryFertilizeCoroutine());
+            }
+        }
+
+        private IEnumerator ProcessTryFertilizeCoroutine()
+        {
+            isProcessing = true;
+            GameObject[] visibleSeeds = GetVisibleSeeds();
+            foreach (GameObject seed in visibleSeeds)
+            {
+                yield return StartCoroutine(TryFertilizeCoroutine(seed));
+                if (!isProcessing)
+                {
+                    yield break;
+                }
+                // 可选：在每个种子处理后添加小延迟，以确保不会过度占用 CPU
+                yield return new WaitForSeconds(0.05f);
+            }
+            isProcessing = false;
+        }
+        private IEnumerator TryFertilizeCoroutine(GameObject seedObject)
+        {
+            GrowingSpotController growingSpotController = seedObject.GetComponent<GrowingSpotController>();
+            if (growingSpotController == null)
+            {
+                Logger.LogInfo(string.Format("Could not get growingSpotController for {0}", seedObject.name));
+                yield break;
+            }
+            bool fertilizeResult = TryFertilize(seedObject);
+            if (!fertilizeResult)
+            {
+                isProcessing = false;
+                yield break;
+            }
+
+            yield return null; // 给游戏一帧的时间来处理这个操作
+        }
+
+        private List<KeyValuePair<InventoryItem, int>> wildGrowthPotions;
+        private List<KeyValuePair<InventoryItem, int>> stoneSkinPotions;
+
+        private bool TryFertilizeNotRemove(GameObject seedObject)//对PotionCraft.ObjectBased.Garden.GrowingSpotController.TryFertilize()的重写（改写）
+        {
+            PotionApplier potionApplier = null;
+            do
+            {
+                GrowingSpotController growingSpotController = seedObject.GetComponent<GrowingSpotController>();
+                if (growingSpotController == null) return false;
+                if (growingSpotController.buildableItem.markedAsDestroyed)return false;
+                
+                GrowthHandler growthHandler = GetPropertyValue<GrowthHandler>(growingSpotController, "GrowthHandler");
+                potionApplier = GetPropertyValue<PotionApplier>(growingSpotController, "PotionApplier");
+                GrowingSpotScaler scaler = GetPropertyValue<GrowingSpotScaler>(growingSpotController, "Scaler");
+                if (growthHandler != null && potionApplier != null && scaler != null)
+                {
+                    Growth growth = GetPropertyValue<Growth>(growthHandler, "Growth");
+                    int growthValue = GetPropertyValue<int>(growth, "Value"); //    int value = growingSpotController.GrowthHandler.Growth.Value;
+                    if (!TryApply(potionApplier, growthHandler))
+                    {
+                        Logger.LogInfo("施肥失败");
+                        return true;
+                    }
+                    growingSpotController.shouldMature = (growthHandler.IsGrown && growthValue < growthHandler.PhasesCount - 1);
+                    growingSpotController.visualObjectControllerExtender.PlayDissolveAnimation();
+                    scaler.AnimateFertilizing();
+                    growingSpotController.TrySpawnParticlesOnPlant();
+                    //无需原版代码删除背包里的物品 和设定高亮
+                    growingSpotController.TryMature(false);
+                    GatherAndWateringSeeds(seedObject); //结尾不管怎么样都对这个种子补充收获与浇水
+                }
+                else
+                {
+                    Logger.LogInfo("有的属性没有找到");
+                    return false;
+                }
+            } while (potionApplier != null && potionApplier.ReadyToApply()); //对于没有成熟的作物，反复施肥和浇水
+            return true;
+        }
+        private bool TryFertilize(GameObject seedObject)//对PotionCraft.ObjectBased.Garden.GrowingSpotController.TryFertilize()的重写（改写）
+        {
+            Inventory inventory = GetPlayInventory();
+            (KeyValuePair<InventoryItem, int>[] WildGrowthPotions, KeyValuePair<InventoryItem, int>[] StoneSkinPotions) = FindTargetPotionItems(inventory);
+            wildGrowthPotions = new List<KeyValuePair<InventoryItem, int>>(WildGrowthPotions);
+            stoneSkinPotions = new List<KeyValuePair<InventoryItem, int>>(StoneSkinPotions);
+            PotionApplier potionApplier = null;
+            do
+            {
+                GrowingSpotController growingSpotController = seedObject.GetComponent<GrowingSpotController>();
+                if (growingSpotController == null)
+                {
+                    Logger.LogInfo(string.Format("Could not get growingSpotController for {0}", seedObject.name));
+                    return false;
+                }
+                if (growingSpotController.buildableItem.markedAsDestroyed)
+                {
+                    return false;
+                }
+                GrowthHandler growthHandler = GetPropertyValue<GrowthHandler>(growingSpotController, "GrowthHandler");
+                potionApplier = GetPropertyValue<PotionApplier>(growingSpotController, "PotionApplier");
+                GrowingSpotScaler scaler = GetPropertyValue<GrowingSpotScaler>(growingSpotController, "Scaler");
+                if (growthHandler != null && potionApplier != null && scaler != null)
+                {
+
+                    KeyValuePair<InventoryItem, int> potion = new KeyValuePair<InventoryItem, int>(null, 0);
+                    if (growingSpotController.Ingredient.type == InventoryItemType.Crystal) potion = PopPotion(stoneSkinPotions);
+                    else if (growingSpotController.Ingredient.type == InventoryItemType.Herb || growingSpotController.Ingredient.type == InventoryItemType.Mushroom) potion = PopPotion(wildGrowthPotions);
+
+                    if (potion.Key == null || inventory.GetItemCount(potion.Key) <= 0)
+                    {
+                        Logger.LogInfo("肥料不足");
+                        return false;
+                    }
+
+                    Growth growth = GetPropertyValue<Growth>(growthHandler, "Growth");
+                    int growthValue = GetPropertyValue<int>(growth, "Value"); //    int value = growingSpotController.GrowthHandler.Growth.Value;
+
+
+                    if (!TryApply(potionApplier, growthHandler))
+                    {
+                        return true;
+                    }
+                    //省略播放音效的代码
+                    //Sound.Play(((Seed)this.buildableItem.InventoryItem).soundPreset.harvestSound, 1f, 1f, false, null, null);
+                    //Sound.Play(Settings<SoundPresetInterface>.Asset.potionGrowthSound, 1f, 1f, false, null, null);
+                    growingSpotController.shouldMature = (growthHandler.IsGrown && growthValue < growthHandler.PhasesCount - 1);
+                    growingSpotController.visualObjectControllerExtender.PlayDissolveAnimation();
+                    scaler.AnimateFertilizing();
+                    growingSpotController.TrySpawnParticlesOnPlant();
+                    //无需原版代码删除背包里的物品 和设定高亮
+                    //((PotionItem)Managers.Cursor.grabbedInteractiveItem).DestroyItem();
+                    inventory.RemoveItem(potion.Key, 1, true);
+                    //Managers.Cursor.ReleasePanItem();
+                    //growingSpotController.buildableItem.SetHovered(true);
+                    growingSpotController.TryMature(false);
+                    GatherAndWateringSeeds(seedObject); //结尾不管怎么样都对这个种子补充收获与浇水
+                }
+                else
+                {
+                    Logger.LogInfo("有的属性没有找到");
+                    return false;
+                }
+
+                //Logger.LogInfo(String.Format("施肥{0}", seedObject));
+            } while (potionApplier != null && potionApplier.ReadyToApply()); //对于没有成熟的作物，反复施肥和浇水
+
+            return true;
+        }
+
+
+
+
+        // Token: 0x06002A4D RID: 10829 RVA: 0x000E2CF0 File Offset: 0x000E0EF0
+        internal bool TryApply(PotionApplier potionApplier, GrowthHandler growthHandler)
+        {//对PotionCraft.ObjectBased.Garden.PotionApplier.TryApply(GrowthHandler) 的重写，num的计算经过简化变成了以下的形式
+
+            int num = !potionApplier.ReadyToApply() ? 0 : 3;
+            if (num <= 0)
+            {
+                return false;
+            }
+            bool canFertilize = PotionApplier.CanFertilize(num);
+            if (growthHandler.IsGrown)
+            {
+                potionApplier.growth.HasAppliedPotion = true;
+            }
+            growthHandler.AddGrowth(num, true, canFertilize);
+            return true;
+        }
+
+
+        #endregion 自动施肥
+
+
+ 
+        #region 自动收获与浇水
         void AutoWateringAndGether() {
             if (enableQuickHarvestWater.Value)
             {
@@ -142,8 +357,6 @@ namespace PotionCraftAutoGarden
             Logger.LogInfo("一键全自动收割浇水完成");
             isProcessing = false;
         }
-
-
         private IEnumerator GatherAndWateringSeedCoroutine(GameObject seedObject)
         {
             // 将原来的 GatherAndWateringSeeds 方法转换为协程
@@ -163,10 +376,6 @@ namespace PotionCraftAutoGarden
             StartWatering(wateringHandler);
             yield return null; // 给游戏一帧的时间来处理这个操作
         }
-
-
-
-
         void WateringPlants(GameObject plantObject)
         {
             GrowingSpotController growingSpotController = plantObject.GetComponent<GrowingSpotController>();
@@ -240,9 +449,8 @@ namespace PotionCraftAutoGarden
                 Logger.LogError("Failed to get GrowthHandler");
             }
         }
-
-
-
+        #endregion 自动收获与浇水
+        #region 工具类
         // 通用反射方法来获取属性值
         private T GetPropertyValue<T>(object obj, string propertyName, BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.GetProperty)
         {
@@ -273,6 +481,38 @@ namespace PotionCraftAutoGarden
 
             return default(T);
         }
+
+        // 通用反射方法来获取属性值
+        private static T GetPropertyValueS<T>(object obj, string propertyName, BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.GetProperty)
+        {
+            if (obj == null)
+            {
+                Debug.Log(string.Format("Object is null when trying to get property: {0}", propertyName));
+                return default(T);
+            }
+
+            Type type = obj.GetType();
+            PropertyInfo propertyInfo = type.GetProperty(propertyName, bindingFlags);
+
+            if (propertyInfo != null)
+            {
+                try
+                {
+                    return (T)propertyInfo.GetValue(obj);
+                }
+                catch (Exception e)
+                {
+                    Debug.Log(string.Format("Error getting property {0}: {1}", propertyName, e.Message));
+                }
+            }
+            else
+            {
+                Debug.Log(string.Format("Property not found: {0}", propertyName));
+            }
+
+            return default(T);
+        }
+
 
         GameObject[] GetVisibleSeeds()
         {
@@ -339,6 +579,82 @@ namespace PotionCraftAutoGarden
             }
             return seeds.ToArray();
         }
+
+
+        Inventory GetPlayInventory() {
+            GameObject managers = GameObject.Find("Managers");
+            if (managers == null)
+            {
+                Logger.LogInfo("Managers not found in the scene.");
+                return null;
+            }
+            PlayerManager playerManager = managers.GetComponent<PlayerManager>();
+            if (playerManager == null)
+            {
+                Logger.LogInfo("PlayerManager not found in the scene.");
+                return null;
+            }
+            return playerManager.Inventory;
+        }
+
+        (KeyValuePair<InventoryItem, int>[] WildGrowthPotions, KeyValuePair<InventoryItem, int>[] StoneSkinPotions) FindTargetPotionItems(Inventory inventory)
+        {
+            InventoryItemIntDictionary items = inventory.items;
+            List<KeyValuePair<InventoryItem, int>> wildGrowthResult = new List<KeyValuePair<InventoryItem, int>>();
+            List<KeyValuePair<InventoryItem, int>> stoneSkinResult = new List<KeyValuePair<InventoryItem, int>>();
+            // 遍历 ItemContainer 的所有子对象
+            foreach (KeyValuePair<InventoryItem, int> item in items)
+            {
+                //item.Key 物体类型
+                //item.Value 物体数量
+                if (item.Key is Potion potion)
+                {
+                    int WildGrowthCount = 0;
+                    int StoneSkinCount = 0;
+                    foreach (PotionEffect effect in potion.effects) {
+                        
+                        if (effect.name.Equals("WildGrowth")) {
+                            WildGrowthCount += 1;
+                            continue;
+                        }
+                        if (effect.name.Equals("StoneSkin"))
+                        {
+                            StoneSkinCount += 1;
+                            continue;
+                        }
+                    }
+                    if (WildGrowthCount >= 3)
+                    {
+                        wildGrowthResult.Add(item);
+                        continue;
+                    }
+
+                    if (StoneSkinCount >= 3)
+                    {
+                        stoneSkinResult.Add(item);
+                        continue;
+                    }
+
+                }
+
+            }
+            return (wildGrowthResult.ToArray(), stoneSkinResult.ToArray());
+        }
+
+        public KeyValuePair<InventoryItem, int> PopPotion(List<KeyValuePair<InventoryItem, int>> potions)
+        {
+            if (potions.Count == 0)
+            {
+                return new KeyValuePair<InventoryItem, int> (null,0); // 或者抛出异常，取决于您如何处理空列表
+            }
+
+            var lastIndex = potions.Count - 1;
+            var potion = potions[lastIndex];
+            potions.RemoveAt(lastIndex);
+            return potion;
+        }
+        #endregion 工具类
+
 
     }
 }
