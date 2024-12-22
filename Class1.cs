@@ -11,18 +11,16 @@ using System.Reflection;
 using BepInEx.Configuration;
 using HarmonyLib;
 using PotionCraft.ManagersSystem.Day;
-using PotionCraft.EnvironmentSystem;
-using PotionCraft.ObjectBased.Potion;
-using PotionCraft.ScriptableObjects.BuildableInventoryItem;
-using PotionCraft.SoundSystem.SoundPresets;
-using PotionCraft.ObjectBased.ScalesSystem;
-using PotionCraft.ObjectBased.InteractiveItem.InventoryObject;
 using PotionCraft.InventorySystem;
 using PotionCraft.ScriptableObjects;
-using PotionCraft.ObjectBased;
-using UnityEngine.InputSystem.HID;
 using PotionCraft.ScriptableObjects.Potion;
-using PotionCraft.ObjectBased.RecipeMap.ChunkSystem;
+using PotionCraft.ManagersSystem.Ingredient;
+using PotionCraft.ManagersSystem.TMP;
+using PotionCraft.ObjectBased.UIElements.FloatingText;
+
+using PotionCraft.Settings;
+using PotionCraft.LocalizationSystem;
+using Key = UnityEngine.InputSystem.Key;
 
 namespace PotionCraftAutoGarden
 {
@@ -32,8 +30,13 @@ namespace PotionCraftAutoGarden
         private static AutoGarden Instance;
         private bool isProcessing = false;
         private static ConfigEntry<bool> enableQuickHarvestWater;
-        private static ConfigEntry<Key> quickHarvestWaterHotkey;
+        private static ConfigEntry<UnityEngine.InputSystem.Key> quickHarvestWaterHotkey;
         private static ConfigEntry<bool> autoHarvestWaterOnWakeUp;
+
+
+        private List<KeyValuePair<InventoryItem, int>> wildGrowthPotions;
+        private List<KeyValuePair<InventoryItem, int>> stoneSkinPotions;
+
         void Start()
         {
             Logger.LogInfo("uk自动花园插件正在加载..");
@@ -63,8 +66,7 @@ namespace PotionCraftAutoGarden
 
         }
         void Awake() {
-            Logger.LogInfo("uk自动花园插件补丁正在加载..");
-
+            LocalizationManager.OnInitialize.AddListener(SetModLocalization);
             Harmony.CreateAndPatchAll(typeof(AutoGarden));
             Instance = this;
         }
@@ -73,10 +75,16 @@ namespace PotionCraftAutoGarden
             if (Keyboard.current[quickHarvestWaterHotkey.Value].wasPressedThisFrame)//一键全自动收割浇水.
             {
                 AutoWateringAndGether();
+
+
             }
             if (Keyboard.current.f2Key.wasPressedThisFrame) {
                 AutoTryFertilize();
             }
+            //if (Keyboard.current.f3Key.wasPressedThisFrame)
+            //{
+            //    SpawnMessageText(LocalizationManager.GetText("#mod_autogarden_insufficient_fertilizer_potion")); 
+            //}
 
             //if (Keyboard.current.f2Key.wasPressedThisFrame)
             //{
@@ -102,13 +110,13 @@ namespace PotionCraftAutoGarden
         }
 
         
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(InventoryObject), "TakeFromInventory")]
-        static void AfterTakeFromInventory(InventoryObject __instance, int count, bool grab) {
-            InventoryItem inventoryItem= GetPropertyValueS<InventoryItem>(__instance, "InventoryItem");
-            ItemsPanel itemsPanel = GetPropertyValueS<ItemsPanel>(__instance, "ItemsPanel");
-            Debug.Log(string.Format("拿起出物品 {0}，目前数量：{1}", count, itemsPanel.Inventory.GetItemCount(inventoryItem)));
-        }
+        //[HarmonyPostfix]
+        //[HarmonyPatch(typeof(InventoryObject), "TakeFromInventory")]
+        //static void AfterTakeFromInventory(InventoryObject __instance, int count, bool grab) {
+        //    InventoryItem inventoryItem= GetPropertyValueS<InventoryItem>(__instance, "InventoryItem");
+        //    ItemsPanel itemsPanel = GetPropertyValueS<ItemsPanel>(__instance, "ItemsPanel");
+        //    Debug.Log(string.Format("拿起出物品 {0}，目前数量：{1}", count, itemsPanel.Inventory.GetItemCount(inventoryItem)));
+        //}
 
 
 
@@ -119,6 +127,7 @@ namespace PotionCraftAutoGarden
             if (enableQuickHarvestWater.Value)
             {
                 GameObject[] visibleSeeds = GetVisibleSeeds();
+                if (visibleSeeds.Length == 0) SpawnMessageText(LocalizationManager.GetText("#mod_autogarden_no_operable_crops"));
                 foreach (GameObject seed in visibleSeeds)
                 {
                     if (!TryFertilize(seed))break;
@@ -134,6 +143,7 @@ namespace PotionCraftAutoGarden
         {
             isProcessing = true;
             GameObject[] visibleSeeds = GetVisibleSeeds();
+            if (visibleSeeds.Length == 0) SpawnMessageText(LocalizationManager.GetText("#mod_autogarden_no_operable_crops"));
             foreach (GameObject seed in visibleSeeds)
             {
                 yield return StartCoroutine(TryFertilizeCoroutine(seed));
@@ -164,8 +174,6 @@ namespace PotionCraftAutoGarden
             yield return null; // 给游戏一帧的时间来处理这个操作
         }
 
-        private List<KeyValuePair<InventoryItem, int>> wildGrowthPotions;
-        private List<KeyValuePair<InventoryItem, int>> stoneSkinPotions;
 
         private bool TryFertilizeNotRemove(GameObject seedObject)//对PotionCraft.ObjectBased.Garden.GrowingSpotController.TryFertilize()的重写（改写）
         {
@@ -235,7 +243,7 @@ namespace PotionCraftAutoGarden
 
                     if (potion.Key == null || inventory.GetItemCount(potion.Key) <= 0)
                     {
-                        Logger.LogInfo("肥料不足");
+                        SpawnMessageText(LocalizationManager.GetText("#mod_autogarden_insufficient_fertilizer_potion"));
                         return false;
                     }
 
@@ -264,7 +272,7 @@ namespace PotionCraftAutoGarden
                 }
                 else
                 {
-                    Logger.LogInfo("有的属性没有找到");
+                    //Logger.LogInfo("有的属性没有找到");
                     return false;
                 }
 
@@ -277,7 +285,6 @@ namespace PotionCraftAutoGarden
 
 
 
-        // Token: 0x06002A4D RID: 10829 RVA: 0x000E2CF0 File Offset: 0x000E0EF0
         internal bool TryApply(PotionApplier potionApplier, GrowthHandler growthHandler)
         {//对PotionCraft.ObjectBased.Garden.PotionApplier.TryApply(GrowthHandler) 的重写，num的计算经过简化变成了以下的形式
 
@@ -305,10 +312,16 @@ namespace PotionCraftAutoGarden
             if (enableQuickHarvestWater.Value)
             {
                 GameObject[] visibleSeeds = GetAllSeeds();
-                foreach (GameObject seed in visibleSeeds)
-                {
-                    GatherAndWateringSeeds(seed);
+                if (visibleSeeds.Length == 0) SpawnMessageText(LocalizationManager.GetText("#mod_autogarden_no_operable_crops"));
+                else {
+                    foreach (GameObject seed in visibleSeeds)
+                    {
+                        GatherAndWateringSeeds(seed);
+                    }
+                    SpawnMessageText(LocalizationManager.GetText("#mod_autogarden_auto_harvest_watering_complete"));
                 }
+
+
             }
             else
             {
@@ -333,19 +346,25 @@ namespace PotionCraftAutoGarden
             //Logger.LogInfo("开始一键全自动收割浇水");
 
             GameObject[] visibleSeeds = GetAllSeeds();
-            foreach (GameObject seed in visibleSeeds)
-            {
-                yield return StartCoroutine(GatherAndWateringSeedCoroutine(seed));
-                // 可选：在每个种子处理后添加小延迟，以确保不会过度占用 CPU
-                yield return new WaitForSeconds(0.05f);
+            if (visibleSeeds.Length == 0) SpawnMessageText(LocalizationManager.GetText("#mod_autogarden_no_operable_crops"));
+            else {
+                foreach (GameObject seed in visibleSeeds)
+                {
+                    yield return StartCoroutine(GatherAndWateringSeedCoroutine(seed));
+                    // 可选：在每个种子处理后添加小延迟，以确保不会过度占用 CPU
+                    yield return new WaitForSeconds(0.05f);
+                }
+
+                SpawnMessageText(LocalizationManager.GetText("#mod_autogarden_auto_harvest_watering_complete"));
             }
+
             //Logger.LogInfo("一键全自动收割浇水完成");
             isProcessing = false;
         }
         private IEnumerator ProcessVisualSeedsCoroutine()
         {
             isProcessing = true;
-            Logger.LogInfo("开始一键全自动收割浇水");
+            //Logger.LogInfo("开始一键全自动收割浇水");
 
             GameObject[] visibleSeeds = GetVisibleSeeds();
             foreach (GameObject seed in visibleSeeds)
@@ -354,7 +373,7 @@ namespace PotionCraftAutoGarden
                 // 可选：在每个种子处理后添加小延迟，以确保不会过度占用 CPU
                 yield return new WaitForSeconds(0.05f);
             }
-            Logger.LogInfo("一键全自动收割浇水完成");
+            //Logger.LogInfo("一键全自动收割浇水完成");
             isProcessing = false;
         }
         private IEnumerator GatherAndWateringSeedCoroutine(GameObject seedObject)
@@ -655,6 +674,75 @@ namespace PotionCraftAutoGarden
         }
         #endregion 工具类
 
+        #region 提示信息
+        public void SpawnMessageText(string msg)
+        {
+
+            GameObject managers = GameObject.Find("Managers");
+            if (managers == null)
+            {
+                Logger.LogInfo("Managers not found in the scene.");
+                return ;
+            }
+            PlayerManager playerManager = managers.GetComponent<PlayerManager>();
+            if (playerManager == null)
+            {
+                Logger.LogInfo("PlayerManager not found in the scene.");
+                return ;
+            }
+
+            Vector2 a = Managers.Cursor.cursor.transform.position;
+            Vector2 floatingTextCursorSpawnOffset = Vector2.zero;
+            Vector2 vector = a + floatingTextCursorSpawnOffset;
+
+            List<CollectedFloatingText.FloatingTextContent> list = new List<CollectedFloatingText.FloatingTextContent>();
+            string commonAtlasName = Settings<TMPManagerSettings>.Asset.CommonAtlasName;
+            CollectedFloatingText.FloatingTextContent item = new CollectedFloatingText.FloatingTextContent(string.Format("<voffset=0.085em><size=81%><sprite=\"{1}\" name=\"SpeechBubble ExclamationMark Icon\"></size>\u202f{0}", msg, commonAtlasName), CollectedFloatingText.FloatingTextContent.Type.Text, 0f);
+            list.Add(item);
+            
+            Transform transform = Managers.Game.Cam.transform;
+            CollectedFloatingText collectedFloatingText = GetPropertyValueS<CollectedFloatingText>(Settings<IngredientManagerSettings>.Asset, "CollectedFloatingText");
+            CollectedFloatingText.SpawnNewText(collectedFloatingText.gameObject, vector, list.ToArray(), transform, false, false);
+        }
+
+        #endregion 提示信息
+
+
+
+
+
+
+
+
+        #region Mod多语言
+
+        public static void RegisterLoc(string key, string en, string zh)
+        {
+            for (int i = 0; i <= (int)LocalizationManager.Locale.cs; i++)
+            {
+                if ((LocalizationManager.Locale)i == LocalizationManager.Locale.zh)
+                {
+                    LocalizationManager.localizationData.Add(i, key, zh);
+                }
+                else
+                {
+                    LocalizationManager.localizationData.Add(i, key, en);
+                }
+            }
+        }
+
+        public static void SetModLocalization()
+        {
+            //RegisterLoc("#mod_autogarden_value", "Value", "价值"); 
+            RegisterLoc("#mod_autogarden_insufficient_fertilizer_potion", "<color=red>Insufficient potion for fertilization</color>", "<color=red>用于施肥的药水不足</color>");
+            RegisterLoc("#mod_autogarden_auto_harvest_watering_complete", "Auto-harvest and watering completed", "自动收获浇水完成");
+            RegisterLoc("#mod_autogarden_no_operable_crops", "No operable crops in this area", "本区域没有可以操作的作物");
+            //RegisterLoc("#mod_autogarden_cost", "Cost", "成本");
+            //RegisterLoc("#mod_autogarden_has", "Has", "已拥有");
+            //RegisterLoc("#mod_autogarden_nothas", "<color=red>Items not owned, recommended</color>", "<color=red>未拥有，建议购入</color>");
+        }
+        //string localizedText = LocalizationManager.GetText("#your_mod_key_1");
+        #endregion Mod多语言
 
     }
 }

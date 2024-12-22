@@ -44,12 +44,20 @@
       <HintPath>F:\SteamLibrary\steamapps\common\Potion Craft\Potion Craft_Data\Managed\PotionCraft.Core.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="PotionCraft.DataBaseSystem-nstrip">
+      <HintPath>F:\SteamLibrary\steamapps\common\Potion Craft\MYdll\PotionCraft.DataBaseSystem-nstrip.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="PotionCraft.ManagerSystem-nstrip">
       <HintPath>F:\SteamLibrary\steamapps\common\Potion Craft\MYdll\PotionCraft.ManagerSystem-nstrip.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="PotionCraft.Scripts-nstrip">
       <HintPath>F:\SteamLibrary\steamapps\common\Potion Craft\MYdll\PotionCraft.Scripts-nstrip.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="PotionCraft.Settings-nstrip">
+      <HintPath>F:\SteamLibrary\steamapps\common\Potion Craft\MYdll\PotionCraft.Settings-nstrip.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="System" />
