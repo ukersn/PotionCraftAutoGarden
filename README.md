@@ -22,9 +22,15 @@ Are you tired of the daily routine of watering plants and harvesting crops? Auto
 
 You can find the configuration file com.ukersn.plugin.AutoGarden.cfg in the directory "Potion Craft\BepInEx\config" after running the game for the first time to modify the settings.
 > 
-> Actually, I recommend using the following configuration. This way, every day when you wake up, it will automatically and quickly harvest and water plants, and harvest crystals:
-> **EnableQuickHarvestWater = true**
+> Actually, I recommend using the following configuration. This way, every day when you wake up, it will automatically and quickly harvest and water plants, and harvest crystals:<br>
+> 
+> **EnableQuickHarvestWater = true**<br>
+> 
 > **AutoHarvestWaterOnWakeUp = true**
+> 
+
+# My Other Projects
+[Recipe Book Button Fix][1]: Used to fix a bug where, after playing the game for a long time, the clickable area of the recipe book button becomes larger, overlapping other buttons.
 
 -----
 
@@ -52,8 +58,15 @@ You can find the configuration file com.ukersn.plugin.AutoGarden.cfg in the dire
 
 
 你可以在第一次运行游戏后在目录"Potion Craft\BepInEx\config"中找到配置文件com.ukersn.plugin.AutoGarden.cfg来修改配置
-> 其实我更建议使用以下配置，这样的话每天起来就会自动且快速的自动收获浇水植物和自动收获水晶
-> **EnableQuickHarvestWater = true**
+> 其实我更建议使用以下配置，这样的话每天起来就会自动且快速的自动收获浇水植物和自动收获水晶:<br>
+> 
+> **EnableQuickHarvestWater = true**<br>
+> 
 > **AutoHarvestWaterOnWakeUp = true**
+> 
+
+# 我的其他项目
+[配方书按钮修复][1] :用于修复游戏游玩久后配方书按钮可点击区域变大，从而覆盖其他按钮的bug
 
 [0]: https://github.com/BepInEx/BepInEx/releases
+[1]: https://github.com/ukersn/PotionCraftOpenRecipeButtonFix
