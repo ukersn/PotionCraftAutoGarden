@@ -147,15 +147,18 @@ namespace PotionCraftAutoGarden.Utilities
 
         public static KeyValuePair<InventoryItem, int> PopPotion(List<KeyValuePair<InventoryItem, int>> potions)
         {
+            //LoggerWrapper.LogInfo(String.Format("背包中药水数量：{0}", potions.Count));
             if (potions.Count == 0)
             {
                 return new KeyValuePair<InventoryItem, int>(null, 0); // 或者抛出异常，取决于您如何处理空列表
             }
-
             var lastIndex = potions.Count - 1;
             var potion = potions[lastIndex];
-            potions.RemoveAt(lastIndex);
+            if(potion.Value <= 1) { 
+                potions.RemoveAt(lastIndex);
+            }
             return potion;
+
         }
 
 
