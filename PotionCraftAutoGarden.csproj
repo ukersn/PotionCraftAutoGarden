@@ -92,6 +92,12 @@
   <ItemGroup>
     <Compile Include="Class1.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Utilities\GameObjectHelper.cs" />
+    <Compile Include="Utilities\LocalizationWrapper.cs" />
+    <Compile Include="Utilities\LoggerWrapper.cs" />
+    <Compile Include="Utilities\OperationHelper.cs" />
+    <Compile Include="Utilities\Tooltis.cs" />
+    <Compile Include="Utilities\CommonUtils.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
