@@ -117,7 +117,7 @@ namespace PotionCraftAutoGarden
         void AutoTryFertilize()
         {
 
-            if (enableQuickHarvestWater.Value)
+            if (enableQuickOperations.Value)
             {
                 operationHelper_F.ResetStatus();
                 GameObject[] visibleSeeds = GameObjectHelper.GetVisibleSeeds();
@@ -314,7 +314,7 @@ namespace PotionCraftAutoGarden
         }
         void AutoWateringAndGether() {
 
-            if (enableQuickHarvestWater.Value)
+            if (enableQuickOperations.Value)
             {
                 operationHelper_W.ResetStatus();
                 GameObject[] visibleSeeds = GameObjectHelper.GetAllSeeds();
