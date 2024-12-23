@@ -19,7 +19,7 @@ using PotionCraftAutoGarden.Utilities;
 
 namespace PotionCraftAutoGarden
 {
-    [BepInPlugin("com.ukersn.plugin.AutoGarden", "PotionCraftAutoGarden", "1.0.0")]
+    [BepInPlugin("com.ukersn.plugin.AutoGarden", "PotionCraftAutoGarden", "1.1.0")]
     public class AutoGarden : BaseUnityPlugin
     {
         private static AutoGarden Instance;
