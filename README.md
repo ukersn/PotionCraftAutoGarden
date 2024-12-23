@@ -1,18 +1,21 @@
 # Potion Craft Auto Garden
 This Mod is compatible with Potion Craft v2.0.1.2!
 
-Are you tired of the daily routine of watering plants and harvesting crops? Auto Garden is here to help you complete all harvesting and watering actions in your garden.
+Tired of the daily routine of watering plants and harvesting crops? Auto Garden is here to help you complete all harvesting, watering, and fertilizing actions in your garden, and can automatically fertilize plants or crystals on the screen.
 
 ## Features:
-> 1.One-key automatic harvesting and watering of plants, and automatic crystal harvesting
+> 1. One-key automatic harvesting and watering of plants, and automatic crystal harvesting
 > * (Default key is set to F1. On laptops, you may need to use Fn+F1. You can set AutoHarvestWaterKey to another key in the configuration file)
 > 
-> 2.Automatic execution of plant harvesting, watering, and crystal harvesting at the start of each new day
+> 2. One-key automatic fertilizing of plants or crystals on the screen
+> * (Default key is set to F2. On laptops, you may need to use Fn+F2. You can set AutoFertilizeKey to another key in the configuration file)
+>
+> 3. Automatic execution of plant harvesting, watering, and crystal harvesting at the start of each new day
 > * (Default setting is false (off). You can set AutoHarvestWaterOnWakeUp to true in the configuration file to enable it)
 > 
-> 3.Adjustable speed for automatic plant harvesting, watering, and crystal harvesting
-> * (Default setting is false (slow). You can set EnableQuickHarvestWater to true in the configuration file to enable fast mode)
-> 
+> 4. Adjustable speed for automatic plant harvesting, watering, crystal harvesting, and fertilizing
+> * (Default setting is false (slow). You can set EnableQuickOperations to true in the configuration file to enable fast mode)
+>
 
 # Installation Instructions
 > * 1.Download and install [BepInEx_x64_5.4.22][0] from GitHub
@@ -24,7 +27,7 @@ You can find the configuration file com.ukersn.plugin.AutoGarden.cfg in the dire
 > 
 > Actually, I recommend using the following configuration. This way, every day when you wake up, it will automatically and quickly harvest and water plants, and harvest crystals:<br>
 > 
-> **EnableQuickHarvestWater = true**<br>
+> **EnableQuickOperations = true**<br>
 > 
 > **AutoHarvestWaterOnWakeUp = true**
 > 
@@ -38,17 +41,20 @@ You can find the configuration file com.ukersn.plugin.AutoGarden.cfg in the dire
 # 药剂工艺 自动花园
 此Mod适配药剂工艺v2.0.1.2版本！
 
-厌倦每天日常浇花和收菜的生活了么？自动花园来了，它可以帮您完成花园中所有的收获和浇水的动作。
+厌倦每天日常浇花和收菜的生活了么？自动花园来了，它可以帮您完成花园中所有的收获和浇水的动作，并且可以对屏幕内的植物或水晶进行自动施肥。
 
 ## 功能: 
 > 1.一键自动收获浇水植物和自动收获水晶
 > *  (默认设置为F1键触发，如果是笔记本电脑，可能需要使用Fn+F1键来触发，可以在配置文件中设定AutoHarvestWaterKey为其他键进行触发)
 > 
+> 2.一键自动对屏幕内的植物或水晶进行施肥
+> *  (默认设置为F2键触发，如果是笔记本电脑，可能需要使用Fn+F2键来触发，可以在配置文件中设定AutoFertilizeKey为其他键进行触发)
+>
 > 2.每天新的一天自动执行自动收获浇水植物和自动收获水晶
 > *  (默认设置为false关闭，可以在配置文件中设定AutoHarvestWaterOnWakeUp为true来开启它)
 > 
-> 3.可调节自动收获浇水植物和自动收获水晶的速度
-> *  (默认设置为false缓慢，可以在配置文件中设定EnableQuickHarvestWater为true来开启它)
+> 3.可调节自动收获浇水植物、自动收获水晶、自动施肥的速度
+> *  (默认设置为false缓慢，可以在配置文件中设定EnableQuickOperations为true来开启它)
 > 
 
 # 安装说明
@@ -60,7 +66,7 @@ You can find the configuration file com.ukersn.plugin.AutoGarden.cfg in the dire
 你可以在第一次运行游戏后在目录"Potion Craft\BepInEx\config"中找到配置文件com.ukersn.plugin.AutoGarden.cfg来修改配置
 > 其实我更建议使用以下配置，这样的话每天起来就会自动且快速的自动收获浇水植物和自动收获水晶:<br>
 > 
-> **EnableQuickHarvestWater = true**<br>
+> **EnableQuickOperations = true**<br>
 > 
 > **AutoHarvestWaterOnWakeUp = true**
 > 
