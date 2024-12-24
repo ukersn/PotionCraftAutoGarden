@@ -35,6 +35,8 @@ You can find the configuration file com.ukersn.plugin.AutoGarden.cfg in the dire
 # My Other Projects
 [Recipe Book Button Fix][1]: Used to fix a bug where, after playing the game for a long time, the clickable area of the recipe book button becomes larger, overlapping other buttons.
 
+[Ukersn's Tweak Wizard][2]: Allows unrestricted planting of plants and crystals, and features to improve game FPS.
+
 -----
 
 
@@ -50,10 +52,10 @@ You can find the configuration file com.ukersn.plugin.AutoGarden.cfg in the dire
 > 2.一键自动对屏幕内的植物或水晶进行施肥
 > *  (默认设置为F2键触发，如果是笔记本电脑，可能需要使用Fn+F2键来触发，可以在配置文件中设定AutoFertilizeKey为其他键进行触发)
 >
-> 2.每天新的一天自动执行自动收获浇水植物和自动收获水晶
+> 3.每天新的一天自动执行自动收获浇水植物和自动收获水晶
 > *  (默认设置为false关闭，可以在配置文件中设定AutoHarvestWaterOnWakeUp为true来开启它)
 > 
-> 3.可调节自动收获浇水植物、自动收获水晶、自动施肥的速度
+> 4.可调节自动收获浇水植物、自动收获水晶、自动施肥的速度
 > *  (默认设置为false缓慢，可以在配置文件中设定EnableQuickOperations为true来开启它)
 > 
 
@@ -74,5 +76,8 @@ You can find the configuration file com.ukersn.plugin.AutoGarden.cfg in the dire
 # 我的其他项目
 [配方书按钮修复][1] :用于修复游戏游玩久后配方书按钮可点击区域变大，从而覆盖其他按钮的bug
 
+[Ukersn的游戏调整优化][2] : 允许植物和水晶无限制的种植，还有提升游戏FPS帧数的功能。
+
 [0]: https://github.com/BepInEx/BepInEx/releases
 [1]: https://github.com/ukersn/PotionCraftOpenRecipeButtonFix
+[2]: https://github.com/ukersn/Potion-Craft-Ukersn-s-TweakWizard
