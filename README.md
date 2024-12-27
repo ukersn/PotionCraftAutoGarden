@@ -37,6 +37,8 @@ You can find the configuration file com.ukersn.plugin.AutoGarden.cfg in the dire
 
 [Ukersn's Tweak Wizard][2]: Allows unrestricted planting of plants and crystals, and features to improve game FPS.
 
+[Potion Craft Game Save Error Fixer/Editor][3] : Used to fix game save errors (corrupted saves)
+
 -----
 
 
@@ -78,6 +80,9 @@ You can find the configuration file com.ukersn.plugin.AutoGarden.cfg in the dire
 
 [Ukersn的游戏调整优化][2] : 允许植物和水晶无限制的种植，还有提升游戏FPS帧数的功能。
 
+[Potion Craft 游戏存档错误修复器/编辑器][3]  ： 用于修复游戏存档错误(坏档)
+
 [0]: https://github.com/BepInEx/BepInEx/releases
 [1]: https://github.com/ukersn/PotionCraftOpenRecipeButtonFix
 [2]: https://github.com/ukersn/Potion-Craft-Ukersn-s-TweakWizard
+[3]: https://github.com/ukersn/Potion-Craft-Save-File-Error-Fixer-Editor
