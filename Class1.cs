@@ -19,11 +19,12 @@ using PotionCraftAutoGarden.Utilities;
 
 namespace PotionCraftAutoGarden
 {
-    [BepInPlugin("com.ukersn.plugin.AutoGarden", "PotionCraftAutoGarden", "1.1.1")]
+    [BepInPlugin("com.ukersn.plugin.AutoGarden", "PotionCraftAutoGarden", "1.1.2")]
     public class AutoGarden : BaseUnityPlugin
     {
         private static AutoGarden Instance;
         private bool isProcessing = false;
+        private static bool isOperating = false;
         private static ConfigEntry<bool> enableQuickOperations;
         private static ConfigEntry<Key> quickHarvestWaterHotkey;
         private static ConfigEntry<Key> quickFertilizeHotkey;
@@ -120,11 +121,13 @@ namespace PotionCraftAutoGarden
             if (enableQuickOperations.Value)
             {
                 operationHelper_F.ResetStatus();
+                isOperating = true;
                 GameObject[] visibleSeeds = GameObjectHelper.GetVisibleSeeds();
                 foreach (GameObject seed in visibleSeeds)
                 {
                     if (!TryFertilize(seed))break;
                 }
+                isOperating = false;
                 operationHelper_F.ShowCompletedMessage();
             }
             else
@@ -137,6 +140,7 @@ namespace PotionCraftAutoGarden
         {
             operationHelper_F.ResetStatus();
             isProcessing = true;
+            isOperating = true;
             GameObject[] visibleSeeds = GameObjectHelper.GetVisibleSeeds();
             foreach (GameObject seed in visibleSeeds)
             {
@@ -149,6 +153,7 @@ namespace PotionCraftAutoGarden
                 yield return new WaitForSeconds(0.05f);
             }
             isProcessing = false;
+            isOperating = false;
             operationHelper_F.ShowCompletedMessage();
         }
         private IEnumerator TryFertilizeCoroutine(GameObject seedObject)
@@ -256,7 +261,7 @@ namespace PotionCraftAutoGarden
                     growingSpotController.shouldMature = (growthHandler.IsGrown && growthValue < growthHandler.PhasesCount - 1);
                     growingSpotController.visualObjectControllerExtender.PlayDissolveAnimation();
                     scaler.AnimateFertilizing();
-                    growingSpotController.TrySpawnParticlesOnPlant();
+                    //growingSpotController.TrySpawnParticlesOnPlant();
                     //无需原版代码删除背包里的物品 和设定高亮
                     //((PotionItem)Managers.Cursor.grabbedInteractiveItem).DestroyItem();
                     inventory.RemoveItem(potion.Key, 1, true);
@@ -317,11 +322,13 @@ namespace PotionCraftAutoGarden
             if (enableQuickOperations.Value)
             {
                 operationHelper_W.ResetStatus();
+                isOperating = true;
                 GameObject[] visibleSeeds = GameObjectHelper.GetAllSeeds();
                 foreach (GameObject seed in visibleSeeds)
                 {
                     GatherAndWateringSeeds(seed);
                 }
+                isOperating = false;
                 operationHelper_W.ShowCompletedMessage();
             }
             else
@@ -331,11 +338,19 @@ namespace PotionCraftAutoGarden
 
         }
 
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(PlantGatherer),"SpawnVisualEffect")]
+        public static bool PrefixSpawnVisualEffect() //阻止收获时触发粒子
+        {
+            // 返回 false 来阻止原方法执行  
+            return !isOperating;
+        }
 
         private IEnumerator ProcessAllSeedsCoroutine()
         {
 
             isProcessing = true;
+            isOperating = true;
             operationHelper_W.ResetStatus();
             //Logger.LogInfo("开始一键全自动收割浇水");
 
@@ -349,6 +364,7 @@ namespace PotionCraftAutoGarden
                 }
 
             //Logger.LogInfo("一键全自动收割浇水完成");
+            isOperating = false;
             isProcessing = false;
             operationHelper_W.ShowCompletedMessage();
         }
