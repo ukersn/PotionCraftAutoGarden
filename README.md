@@ -16,6 +16,9 @@ Tired of the daily routine of watering plants and harvesting crops? Auto Garden 
 > 4. Adjustable speed for automatic plant harvesting, watering, crystal harvesting, and fertilizing
 > * (Default setting is false (slow). You can set EnableQuickOperations to true in the configuration file to enable fast mode)
 >
+> 5. Switchable automatic fertilization range.
+> * (Default setting is false, which only fertilizes plants or crystals on screen. You can set FertilizeAllSeeds to true in the configuration file to switch to fertilizing plants or crystals in all rooms)
+>
 
 # Installation Instructions
 > * 1.Download and install [BepInEx_x64_5.4.22][0] from GitHub
@@ -50,16 +53,20 @@ You can find the configuration file com.ukersn.plugin.AutoGarden.cfg in the dire
 ## 功能: 
 > 1.一键自动收获浇水植物和自动收获水晶
 > *  (默认设置为F1键触发，如果是笔记本电脑，可能需要使用Fn+F1键来触发，可以在配置文件中设定AutoHarvestWaterKey为其他键进行触发)
-> 
+>
 > 2.一键自动对屏幕内的植物或水晶进行施肥
 > *  (默认设置为F2键触发，如果是笔记本电脑，可能需要使用Fn+F2键来触发，可以在配置文件中设定AutoFertilizeKey为其他键进行触发)
 >
 > 3.每天新的一天自动执行自动收获浇水植物和自动收获水晶
 > *  (默认设置为false关闭，可以在配置文件中设定AutoHarvestWaterOnWakeUp为true来开启它)
-> 
+>
 > 4.可调节自动收获浇水植物、自动收获水晶、自动施肥的速度
 > *  (默认设置为false缓慢，可以在配置文件中设定EnableQuickOperations为true来开启它)
+>
+> 5.可切换的自动施肥范围。
+> *  (默认设置为false只对屏幕内的植物或水晶施肥，可以在配置文件中设定FertilizeAllSeeds为true来切换为对所有房间中的植物或水晶施肥)
 > 
+
 
 # 安装说明
 > * 1. 在GitHub下载并安装 [BepInEx_x64_5.4.22][0]

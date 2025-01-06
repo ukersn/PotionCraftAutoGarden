@@ -29,6 +29,7 @@ namespace PotionCraftAutoGarden
         private static ConfigEntry<Key> quickHarvestWaterHotkey;
         private static ConfigEntry<Key> quickFertilizeHotkey;
         private static ConfigEntry<bool> autoHarvestWaterOnWakeUp;
+        private static ConfigEntry<bool> fertilizeAllSeeds;
         private OperationHelper operationHelper_W; //自动浇水和收获的方法管理
         private OperationHelper operationHelper_F; //自动施肥的方法管理
 
@@ -71,7 +72,16 @@ namespace PotionCraftAutoGarden
                                        false,
                                        "Automatically harvest and water after waking up each day\n(Only takes effect from the second day after the tutorial ends)\n" +
                                        "在每天起床后启动自动收割和浇水\n(仅在教程结束后的第二天开始生效)");
-
+            // 创建配置项：切换自动施肥的范围
+            fertilizeAllSeeds = config.Bind("General",      // 配置分类
+                                             "FertilizeAllSeeds",  // 配置键
+                                             false,           // 默认值为 false（屏幕内）
+                                             "Toggle the range of automatic fertilizing\n" +
+                                             "false: Only fertilize plants and crystals on screen\n" +
+                                             "true: Fertilize all plants and crystals in the game\n" +
+                                             "切换自动施肥的范围\n" +
+                                             "false：仅对屏幕内的植物和水晶施肥\n" +
+                                             "true：对游戏中所有植物和水晶施肥");
 
             // 实例化 OperationHelper
             operationHelper_W = new OperationHelper(
@@ -122,7 +132,9 @@ namespace PotionCraftAutoGarden
             {
                 operationHelper_F.ResetStatus();
                 isOperating = true;
-                GameObject[] visibleSeeds = GameObjectHelper.GetVisibleSeeds();
+                GameObject[] visibleSeeds = fertilizeAllSeeds.Value == true ? GameObjectHelper.GetAllSeeds() : GameObjectHelper.GetVisibleSeeds();
+
+
                 foreach (GameObject seed in visibleSeeds)
                 {
                     if (!TryFertilize(seed))break;
@@ -141,7 +153,7 @@ namespace PotionCraftAutoGarden
             operationHelper_F.ResetStatus();
             isProcessing = true;
             isOperating = true;
-            GameObject[] visibleSeeds = GameObjectHelper.GetVisibleSeeds();
+            GameObject[] visibleSeeds = fertilizeAllSeeds.Value == true ? GameObjectHelper.GetAllSeeds() : GameObjectHelper.GetVisibleSeeds();
             foreach (GameObject seed in visibleSeeds)
             {
                 yield return StartCoroutine(TryFertilizeCoroutine(seed));
@@ -150,7 +162,7 @@ namespace PotionCraftAutoGarden
                     yield break;
                 }
                 // 可选：在每个种子处理后添加小延迟，以确保不会过度占用 CPU
-                yield return new WaitForSeconds(0.05f);
+                yield return new WaitForSeconds(0.02f);
             }
             isProcessing = false;
             isOperating = false;
@@ -360,7 +372,7 @@ namespace PotionCraftAutoGarden
                 {
                     yield return StartCoroutine(GatherAndWateringSeedCoroutine(seed));
                     // 可选：在每个种子处理后添加小延迟，以确保不会过度占用 CPU
-                    yield return new WaitForSeconds(0.05f);
+                    yield return new WaitForSeconds(0.02f);
                 }
 
             //Logger.LogInfo("一键全自动收割浇水完成");
