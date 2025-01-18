@@ -19,7 +19,7 @@ using PotionCraftAutoGarden.Utilities;
 
 namespace PotionCraftAutoGarden
 {
-    [BepInPlugin("com.ukersn.plugin.AutoGarden", "PotionCraftAutoGarden", "1.1.2")]
+    [BepInPlugin("com.ukersn.plugin.AutoGarden", "PotionCraftAutoGarden", "1.1.4")]
     public class AutoGarden : BaseUnityPlugin
     {
         private static AutoGarden Instance;
@@ -170,6 +170,11 @@ namespace PotionCraftAutoGarden
         }
         private IEnumerator TryFertilizeCoroutine(GameObject seedObject)
         {
+            if (seedObject == null)
+            {
+                Logger.LogInfo(string.Format("Could not get seedObject"));
+                yield break;
+            }
             GrowingSpotController growingSpotController = seedObject.GetComponent<GrowingSpotController>();
             if (growingSpotController == null)
             {
@@ -226,6 +231,7 @@ namespace PotionCraftAutoGarden
         //}
         private bool TryFertilize(GameObject seedObject)//对PotionCraft.ObjectBased.Garden.GrowingSpotController.TryFertilize()的重写（改写）
         {
+            if (seedObject == null) return false;
             Inventory inventory = GameObjectHelper.GetPlayInventory();
             (KeyValuePair<InventoryItem, int>[] WildGrowthPotions, KeyValuePair<InventoryItem, int>[] StoneSkinPotions) = GameObjectHelper.FindTargetPotionItems(inventory);
             wildGrowthPotions = new List<KeyValuePair<InventoryItem, int>>(WildGrowthPotions);
@@ -398,6 +404,11 @@ namespace PotionCraftAutoGarden
         private IEnumerator GatherAndWateringSeedCoroutine(GameObject seedObject)
         {
             // 将原来的 GatherAndWateringSeeds 方法转换为协程
+            if (seedObject == null)
+            {
+                Logger.LogInfo(string.Format("Could not get seedObject"));
+                yield break;
+            }
             GrowingSpotController growingSpotController = seedObject.GetComponent<GrowingSpotController>();
             if (growingSpotController == null)
             {
@@ -441,6 +452,8 @@ namespace PotionCraftAutoGarden
         //}
         void GatherAndWateringSeeds(GameObject seedObject)
         {
+            if (seedObject == null)return;
+
             GrowingSpotController growingSpotController = seedObject.GetComponent<GrowingSpotController>();
             if (growingSpotController == null)
             {
